@@ -10,9 +10,7 @@ from libs.model import UNet
 from torchmetrics.functional import peak_signal_noise_ratio, structural_similarity_index_measure
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--iteration", type=int, default=300
-)
+
 parser.add_argument(
     "--train_root", type=str, required=True
 )
@@ -43,14 +41,19 @@ parser.add_argument(
 parser.add_argument(
     "--name", type=str, required=True
 )
-
+parser.add_argument(
+    "--iteration", type=int, default=300
+)
+parser.add_argument(
+    "--save_interval", type=int, default=10
+)
 
 if __name__ == "__main__":
     opt = parser.parse_args()
     print(f"# size = {opt.size}")
-    savedir = os.path.join("./test", opt.name)
-    if not os.path.exists("./test"):
-        os.mkdir("test")
+    savedir = os.path.join("./weight", opt.name)
+    if not os.path.exists("./weight"):
+        os.mkdir("./weight")
     if not os.path.exists(savedir):
         os.mkdir(savedir)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -113,5 +116,8 @@ if __name__ == "__main__":
                     f"# [VAL]({epoch}/{opt.epochs}) | psnr = {(sum_psnr / iteration):.3f}, ssnr = {(sum_ssnr / iteration):.3f}"
                 )
         scheduler.step()
+        
+        if epoch % opt.save_interval == 0:
+            torch.save(model.state_dict(), os.path.join(savedir, f"weight_{epoch}.pth"))
 
-    # after train
+    torch.save(model.state_dict(), os.path.join(savedir, f"final.pth"))
